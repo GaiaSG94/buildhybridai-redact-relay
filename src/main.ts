@@ -1,4 +1,4 @@
-import './ui/style.css';
+﻿import './ui/style.css';
 import { loadConfig } from './config';
 import { initFirebase } from './firebase';
 import { createModels, runRedaction, runSummary, type RedactorBundle } from './models';
@@ -41,7 +41,7 @@ export function mount(root: HTMLElement): void {
   void refreshHistory(elements, bundle.app);
 }
 
-function bindRedact(elements: AppElements, models: RedactorBundle): void {
+const bindRedact = (elements: AppElements, models: RedactorBundle): void => {
   elements.redactButton.addEventListener('click', () => {
     void (async () => {
       const text = elements.transcript.value;
@@ -64,7 +64,7 @@ function bindRedact(elements: AppElements, models: RedactorBundle): void {
   });
 }
 
-function bindSummarize(elements: AppElements, models: RedactorBundle): void {
+const bindSummarize = (elements: AppElements, models: RedactorBundle): void => {
   elements.summarizeButton.addEventListener('click', () => {
     void (async () => {
       const sanitized = elements.preview.querySelector('.sanitized')?.textContent ?? '';
@@ -84,7 +84,7 @@ function bindSummarize(elements: AppElements, models: RedactorBundle): void {
   });
 }
 
-function bindSave(elements: AppElements, app: Parameters<typeof saveSummary>[0]): void {
+const bindSave = (elements: AppElements, app: Parameters<typeof saveSummary>[0]): void => {
   elements.saveButton.addEventListener('click', () => {
     void (async () => {
       const sanitized = elements.preview.querySelector('.sanitized')?.textContent ?? '';
@@ -103,7 +103,7 @@ function bindSave(elements: AppElements, app: Parameters<typeof saveSummary>[0])
   });
 }
 
-async function refreshHistory(elements: AppElements, app: Parameters<typeof saveSummary>[0]): Promise<void> {
+const refreshHistory = async (elements: AppElements, app: Parameters<typeof saveSummary>[0]): Promise<void> => {
   try {
     showHistory(elements, await listSummaries(app));
   } catch {
@@ -111,7 +111,7 @@ async function refreshHistory(elements: AppElements, app: Parameters<typeof save
   }
 }
 
-function describe(error: unknown): string {
+const describe = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
 }
 
