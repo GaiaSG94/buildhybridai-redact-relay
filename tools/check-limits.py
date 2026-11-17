@@ -1,4 +1,4 @@
-"""Garde < 500 lignes/fichier, < 50 lignes/fonction (heuristique multi-langages)."""
+﻿"""Garde < 500 lignes/fichier, < 50 lignes/fonction (heuristique multi-langages)."""
 import os
 import re
 import sys
@@ -11,6 +11,8 @@ INDENT_EXTS = {".py"}
 COUNT_ONLY_EXTS = {".yml", ".yaml", ".json", ".toml"}
 SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "renders",
              "audio-generated", "__pycache__"}
+# Lockfiles generates : jamais ecrits a la main, exclus des limites de taille.
+SKIP_FILES = {"package-lock.json", "pnpm-lock.yaml", "yarn.lock", "Cargo.lock", "poetry.lock"}
 FUNC_RE = re.compile(r"^\s*(def |function |fn |func |sub |Function )")
 
 
@@ -94,6 +96,8 @@ def main():
     for root, dirs, files in os.walk("."):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         for name in files:
+            if name in SKIP_FILES:
+                continue
             ext = os.path.splitext(name)[1]
             if ext in BRACE_EXTS or ext in INDENT_EXTS or ext in COUNT_ONLY_EXTS:
                 problems += check_file(os.path.join(root, name))

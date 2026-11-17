@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redact Relay - on-device redaction before cloud summarization</title>
+    <meta
+      name="description"
+      content="Redact Relay masks sensitive fragments on the device with Firebase AI Logic before any transcript reaches the cloud."
+    />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <h1>Redact Relay</h1>
+        <span id="badge" class="badge" data-source="on_device">LOCAL</span>
+      </header>
+
+      <p id="notice" class="notice" hidden></p>
+
+      <main class="grid">
+        <section class="pane">
+          <h2>Transcript</h2>
+          <textarea id="transcript" rows="12" spellcheck="false"></textarea>
+          <label class="slider">
+            Sensitivity
+            <input id="sensitivity" type="range" min="0" max="1" step="0.05" value="0.6" />
+          </label>
+          <div class="actions">
+            <button id="redact" type="button" class="primary">Redact on device</button>
+            <button id="summarize" type="button">Summarize in cloud</button>
+            <button id="save" type="button">Save</button>
+          </div>
+          <p id="stats" class="stats">Paste a transcript and run the on-device redaction.</p>
+        </section>
+
+        <section class="pane">
+          <h2>Redaction preview</h2>
+          <div id="preview" class="preview"></div>
+          <h2>Summary</h2>
+          <div id="summary-panel" class="summary"></div>
+          <h2>History</h2>
+          <div id="history" class="history"></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
