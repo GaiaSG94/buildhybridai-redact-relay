@@ -14,11 +14,11 @@ import { buildSummaryPrompt, parseSummary } from './core/summary';
 import type { MeetingSummary, RedactionOptions, RedactionRun } from './core/types';
 
 /** Hybrid model: prefer the on-device model, fall back to the cloud. */
-export function createRedactor(ai: AI): GenerativeModel {
+export function createRedactor(ai: AI, cloudModel: string): GenerativeModel {
   return getGenerativeModel(ai, {
     mode: InferenceMode.PREFER_ON_DEVICE,
     onDeviceParams: { createOptions: { expectedOutputs: [{ type: 'text' }] } },
-    inCloudParams: { model: 'gemini-2.5-flash' },
+    inCloudParams: { model: cloudModel },
   });
 }
 
@@ -36,7 +36,7 @@ export interface RedactorBundle {
 }
 
 export function createModels(ai: AI, cloudModel: string): RedactorBundle {
-  return { redactor: createRedactor(ai), summarizer: createSummarizer(ai, cloudModel) };
+  return { redactor: createRedactor(ai, cloudModel), summarizer: createSummarizer(ai, cloudModel) };
 }
 
 /** Run the on-device-first redaction and return spans plus telemetry. */

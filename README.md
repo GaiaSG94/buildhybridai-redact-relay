@@ -18,8 +18,9 @@ the UI shows where every inference ran.
 
 ## How Firebase AI Logic is used
 
-- `getAI(app, { backend: new AgentPlatformBackend('global') })` — Firebase
-  AI Logic is initialized at runtime (`src/firebase.ts`).
+- `getAI(app, { backend: new GoogleAIBackend() })` — Firebase
+  AI Logic is initialized at runtime (`src/firebase.ts`), on the Gemini
+  Developer API free tier (no payment method, no billing).
 - `getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE,
   onDeviceParams, inCloudParams })` — **hybrid inference**: the SDK prefers
   the on-device model and falls back to the cloud model

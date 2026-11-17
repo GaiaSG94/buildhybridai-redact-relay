@@ -28,13 +28,15 @@ function readEnv(): EnvConfig {
 
 export function loadConfig(): AppConfig {
   const env = import.meta.env as Record<string, string | undefined>;
-  const backend = env['VITE_AI_BACKEND'] === 'google-ai' ? 'google-ai' : 'agent-platform';
+  // Default: Gemini Developer API (Spark free tier, no payment method).
+  // "agent-platform" (ex-Vertex AI) always requires a Blaze billing account.
+  const backend = env['VITE_AI_BACKEND'] === 'agent-platform' ? 'agent-platform' : 'google-ai';
   return {
     ...readEnv(),
     backend,
     appcheckSiteKey: env['VITE_APPCHECK_SITE_KEY'] ?? '',
     appcheckDebug: env['VITE_APPCHECK_DEBUG'] === '1',
-    cloudModel: env['VITE_CLOUD_MODEL'] ?? 'gemini-2.5-flash',
+    cloudModel: env['VITE_CLOUD_MODEL'] ?? 'gemini-3.5-flash-lite',
   };
 }
 
