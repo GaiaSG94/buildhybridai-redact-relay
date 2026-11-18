@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redact Relay — V1 · 03 Redline</title>
+<style>
+  :root {
+    --bg: #ecebe6; --paper: #fbfaf7; --line: #d9d7cf; --line-2: #c8c5bb;
+    --ink: #15171c; --muted: #5d6470; --dim: #8b909a;
+    --local: #0e8a4a; --cloud: #a85f00; --mask: #d42a2a;
+    --sans: "Inter", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #d6d4cd; }
+  body { font: 14px/1.5 var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .screen { width: 1440px; height: 900px; margin: 0 auto; background: var(--bg); display: grid; grid-template-rows: 60px 116px 1fr; overflow: hidden; }
+
+  .top { display: flex; align-items: center; gap: 14px; padding: 0 36px; }
+  .top h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.2px; display: flex; align-items: center; gap: 10px; }
+  .top h1 i { display: inline-block; width: 22px; height: 8px; background: var(--ink); }
+  .top .sp { flex: 1; }
+  .top .cap { font: 12px var(--mono); color: var(--dim); }
+  .pill { font: 700 12px/1 var(--mono); letter-spacing: 1px; padding: 7px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; color: #fff; }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: #fff; opacity: .9; }
+  .pill.local { background: var(--local); }
+  .pill.cloud { background: var(--cloud); }
+  .pill.sm { font-size: 10.5px; padding: 4px 8px; gap: 6px; } .pill.sm i { width: 5px; height: 5px; }
+
+  /* headline counter */
+  .headline { margin: 0 36px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line-2); display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 40px; }
+  .num { display: flex; align-items: baseline; gap: 12px; }
+  .num b { font: 700 64px/1 var(--mono); letter-spacing: -3px; }
+  .num span { font-size: 15px; color: var(--muted); max-width: 90px; line-height: 1.25; }
+  .num.red b { color: var(--mask); }
+  .claim { font-size: 26px; font-weight: 600; letter-spacing: -.6px; }
+  .claim em { font-style: normal; color: var(--local); }
+  .actions { display: flex; gap: 10px; }
+  .btn { height: 42px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ink); background: transparent; font: 600 14px var(--sans); color: var(--ink); }
+  .btn.primary { background: var(--ink); color: var(--paper); }
+  .btn.ghost { border-color: var(--line-2); color: var(--muted); }
+
+  .body { display: grid; grid-template-columns: 1fr 520px; gap: 28px; padding: 24px 36px 28px; min-height: 0; }
+  .paper { background: var(--paper); border: 1px solid var(--line); box-shadow: 0 1px 0 var(--line), 0 18px 40px -28px rgba(20,22,28,.35); padding: 34px 44px; display: flex; flex-direction: column; min-height: 0; }
+  .ph { display: flex; align-items: center; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line); font: 11px var(--mono); color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+  .ph .sp { flex: 1; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px; text-transform: none; letter-spacing: 0; }
+  .seg span { font: 500 12px var(--sans); padding: 4px 11px; border-radius: 999px; color: var(--muted); }
+  .seg span.on { background: var(--ink); color: var(--paper); }
+  .text { font: 23px/52px var(--sans); letter-spacing: -.2px; margin: 22px 0 0; flex: 1; }
+  .text p { margin: 0 0 10px; }
+  .bar { position: relative; background: var(--ink); color: transparent; border-radius: 1px; padding: 2px 0; user-select: none; }
+  .bar::after { content: attr(data-t); position: absolute; left: 0; top: -15px; font: 700 9px/1 var(--mono); color: var(--mask); letter-spacing: .8px; white-space: nowrap; }
+  .bar.hl { background: rgba(212,42,42,.12); color: var(--ink); box-shadow: inset 0 -2px 0 var(--mask); }
+
+  .tools { display: grid; grid-template-columns: 120px 1fr 64px; gap: 18px; align-items: center; border-top: 1px solid var(--line); padding-top: 18px; }
+  .tools .k { font: 11px var(--mono); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .track { position: relative; height: 3px; background: var(--line-2); }
+  .track b { position: absolute; left: 0; top: 0; bottom: 0; width: 60%; background: var(--ink); }
+  .track em { position: absolute; left: 60%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); }
+  .tools .v { font: 700 18px var(--mono); text-align: right; }
+
+  .side { display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+  .block { background: var(--paper); border: 1px solid var(--line); }
+  .bh { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--line); font: 11px var(--mono); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .bh .sp { flex: 1; } .bh .r { text-transform: none; letter-spacing: 0; color: var(--dim); }
+  .sumrow { display: grid; grid-template-columns: 96px 1fr; gap: 14px; padding: 12px 18px; border-top: 1px solid var(--line); }
+  .sumrow:first-of-type { border-top: 0; }
+  .sumrow h3 { margin: 0; font: 600 11px/22px var(--mono); color: var(--dim); letter-spacing: 1px; }
+  .sumrow p { margin: 0; font-size: 14.5px; line-height: 22px; }
+  .hist .row { display: grid; grid-template-columns: 104px 1fr auto; gap: 12px; padding: 10px 18px; border-top: 1px solid var(--line); font-size: 13px; }
+  .hist .row:first-of-type { border-top: 0; }
+  .hist time { font: 12px var(--mono); color: var(--dim); }
+  .hist span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist em { font: normal 12px var(--mono); color: var(--mask); }
+</style>
+</head>
+<body>
+<div class="screen">
+  <header class="top">
+    <h1><i aria-hidden="true"></i>Redact Relay</h1>
+    <span class="sp"></span>
+    <span class="cap">last run</span>
+    <span class="pill local"><i></i>LOCAL</span>
+  </header>
+
+  <section class="headline">
+    <div class="num red"><b>6</b><span>fragments blocked</span></div>
+    <div class="num"><b>412</b><span>ms on this device</span></div>
+    <div class="claim">Nothing <em>left this device.</em></div>
+    <div class="actions">
+      <button class="btn primary">Redact on device</button>
+      <button class="btn">Summarize in cloud</button>
+      <button class="btn ghost">Save</button>
+    </div>
+  </section>
+
+  <div class="body">
+    <article class="paper">
+      <div class="ph">Transcript <span class="pill local sm"><i></i>LOCAL</span><span class="sp"></span>
+        <span class="seg"><span>Highlighted</span><span class="on">Redacted</span></span></div>
+      <div class="text">
+        <p><span class="bar" data-t="NAME">Alice Martin</span> (<span class="bar" data-t="EMAIL">alice.martin@acme-corp.com</span>) opens the Acme review.</p>
+        <p>Budget owner is <span class="bar" data-t="PHONE">+33 6 12 34 56 78</span>, card <span class="bar" data-t="OTHER">4111 1111 1111 1111</span>.</p>
+        <p>The API key is <span class="bar" data-t="SECRET">key_live_9f2c8ab31d</span> and the room is <span class="bar" data-t="ADDRESS">12 rue de la Paix, Paris</span>.</p>
+        <p>We decided to ship the beta on Friday; Sam will own the migration.</p>
+      </div>
+      <div class="tools">
+        <span class="k">Sensitivity</span>
+        <div class="track"><b></b><em></em></div>
+        <span class="v">0.60</span>
+      </div>
+    </article>
+
+    <aside class="side">
+      <div class="block">
+        <div class="bh">Summary <span class="pill cloud sm"><i></i>CLOUD</span><span class="sp"></span><span class="r">1.84 s · from redacted text</span></div>
+        <div class="sumrow"><h3>OVERVIEW</h3><p>The Acme review covered budget ownership and access details, all masked before upload, and agreed on the beta release plan.</p></div>
+        <div class="sumrow"><h3>DECISIONS</h3><p>Ship the beta on Friday.</p></div>
+        <div class="sumrow"><h3>ACTIONS</h3><p>Sam owns the migration.</p></div>
+        <div class="sumrow"><h3>RISKS</h3><p>A payment card and a live API key were spoken in the meeting; rotate the key before Friday.</p></div>
+      </div>
+      <div class="block hist">
+        <div class="bh">History <span class="sp"></span><span class="r">redacted text only</span></div>
+        <div class="row"><time>18 Nov · 10:42</time><span>[REDACTED] opens the Acme review…</span><em>6 blocked</em></div>
+        <div class="row"><time>17 Nov · 16:05</time><span>[REDACTED] joins the platform team on…</span><em>4 blocked</em></div>
+        <div class="row"><time>14 Nov · 09:30</time><span>Quarterly numbers for [REDACTED] are…</span><em>3 blocked</em></div>
+      </div>
+    </aside>
+  </div>
+</div>
+</body>
+</html>
