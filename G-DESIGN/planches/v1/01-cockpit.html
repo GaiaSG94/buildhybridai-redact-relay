@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redact Relay — V1 · 01 Cockpit</title>
+<style>
+  :root {
+    --bg: #10131a; --panel: #171b24; --panel-2: #12161e; --line: #252c39; --line-2: #2f3747;
+    --text: #e7ecf3; --muted: #93a1b5; --dim: #5f6b7e;
+    --local: #3ddc84; --cloud: #ffb454; --mask: #ff5d5d;
+    --sans: "Inter", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #0a0c11; }
+  body { font: 14px/1.5 var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .screen { width: 1440px; height: 900px; margin: 0 auto; background: var(--bg); display: grid; grid-template-rows: 56px 1fr; overflow: hidden; }
+
+  /* top bar */
+  .top { display: flex; align-items: center; gap: 16px; padding: 0 28px; border-bottom: 1px solid var(--line); }
+  .mark { width: 18px; height: 18px; border: 1.5px solid var(--text); border-radius: 4px; position: relative; }
+  .mark::after { content: ""; position: absolute; left: 3px; right: 3px; top: 7px; height: 3px; background: var(--mask); }
+  .top h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: .1px; }
+  .top .sep { width: 1px; height: 20px; background: var(--line-2); }
+  .top .meta { color: var(--muted); font-size: 13px; }
+  .top .spacer { flex: 1; }
+  .pill { font: 600 12px/1 var(--mono); letter-spacing: .8px; padding: 7px 11px 7px 10px; border-radius: 999px; border: 1px solid; display: inline-flex; align-items: center; gap: 8px; }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent); }
+  .pill.local { color: var(--local); border-color: color-mix(in srgb, var(--local) 55%, transparent); background: color-mix(in srgb, var(--local) 8%, transparent); }
+  .pill.cloud { color: var(--cloud); border-color: color-mix(in srgb, var(--cloud) 55%, transparent); background: color-mix(in srgb, var(--cloud) 8%, transparent); }
+  .pill.sm { font-size: 10.5px; padding: 4px 8px; gap: 6px; }
+  .pill.sm i { width: 5px; height: 5px; box-shadow: none; }
+  .top .last { color: var(--dim); font: 12px var(--mono); }
+
+  /* body */
+  .body { display: grid; grid-template-columns: 600px 1fr; min-height: 0; }
+  .col { padding: 24px 28px; min-height: 0; display: flex; flex-direction: column; gap: 18px; }
+  .col.left { border-right: 1px solid var(--line); }
+  .label { font: 600 11px/1 var(--mono); color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+  .label .n { color: var(--dim); }
+  .label .r { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--dim); }
+
+  .editor { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; flex: 1; min-height: 0; overflow: hidden; padding: 14px 0; background-image: linear-gradient(to right, transparent 43px, var(--line) 43px, var(--line) 44px, transparent 44px); }
+  .row { display: grid; grid-template-columns: 44px 1fr; font: 14.5px/30px var(--mono); color: #c9d2de; padding: 3px 20px 3px 0; }
+  .row .ln { font-size: 12px; color: var(--dim); text-align: center; }
+  .row > span:last-child { padding-left: 18px; }
+  .editor .m { color: #ffc2c2; background: rgba(255,93,93,.14); border-bottom: 2px solid var(--mask); padding: 1px 0; }
+
+  .controls { display: grid; grid-template-columns: 1fr auto; gap: 14px 24px; align-items: center; }
+  .slider { display: flex; align-items: center; gap: 14px; }
+  .slider span { font-size: 13px; color: var(--muted); }
+  .track { position: relative; flex: 1; height: 4px; background: var(--line-2); border-radius: 2px; }
+  .track b { position: absolute; left: 0; top: 0; bottom: 0; width: 60%; background: var(--text); border-radius: 2px; }
+  .track em { position: absolute; left: 60%; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 4px var(--bg); }
+  .ticks { display: flex; justify-content: space-between; font: 10.5px var(--mono); color: var(--dim); grid-column: 1; margin-top: -8px; padding-left: 86px; }
+  .val { font: 600 15px var(--mono); }
+  .actions { display: flex; gap: 10px; grid-column: 1 / -1; }
+  .btn { font: 500 13.5px var(--sans); height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--line-2); background: transparent; color: var(--text); display: inline-flex; align-items: center; gap: 10px; }
+  .btn kbd { font: 11px var(--mono); color: var(--dim); }
+  .btn.primary { background: var(--local); color: #06210f; border-color: var(--local); font-weight: 600; }
+  .btn.primary kbd { color: #0d5a2c; }
+  .btn.ghost { margin-left: auto; color: var(--muted); }
+
+  /* hook counter */
+  .hook { border: 1px solid color-mix(in srgb, var(--local) 35%, var(--line)); background: linear-gradient(0deg, color-mix(in srgb, var(--local) 5%, var(--panel)), var(--panel)); border-radius: 12px; padding: 18px 20px; display: grid; grid-template-columns: auto 1px auto 1px 1fr; gap: 26px; align-items: center; }
+  .hook .vr { height: 44px; background: var(--line-2); }
+  .stat b { display: block; font: 600 34px/1 var(--mono); letter-spacing: -1px; }
+  .stat b small { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+  .stat span { display: block; margin-top: 6px; font: 11px var(--mono); color: var(--muted); letter-spacing: .6px; text-transform: uppercase; }
+  .stat.red b { color: var(--mask); }
+  .claim { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .claim p { margin: 0; font: 600 17px var(--sans); letter-spacing: -.2px; white-space: nowrap; color: var(--local); }
+
+  /* right */
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .card-h { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .seg { margin-left: auto; display: inline-flex; border: 1px solid var(--line-2); border-radius: 7px; padding: 2px; }
+  .seg span { font: 500 12px var(--sans); padding: 5px 10px; border-radius: 5px; color: var(--muted); }
+  .seg span.on { background: var(--line-2); color: var(--text); }
+  .sanit { padding: 14px 16px; font: 13px/24px var(--mono); color: #c9d2de; white-space: pre-wrap; }
+  .tok { font: 600 11px var(--mono); color: var(--mask); border: 1px solid color-mix(in srgb, var(--mask) 50%, transparent); background: rgba(255,93,93,.08); padding: 1px 6px; border-radius: 4px; letter-spacing: .4px; }
+  .types { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 14px; }
+  .types span { font: 11px var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 5px; padding: 3px 7px; }
+  .types span b { color: var(--text); font-weight: 600; }
+
+  .sum { display: grid; grid-template-columns: 1fr 1fr; }
+  .sum section { padding: 14px 16px; border-top: 1px solid var(--line); }
+  .sum section:nth-child(odd) { border-right: 1px solid var(--line); }
+  .sum section.wide { grid-column: 1 / -1; border-right: 0; border-top: 0; }
+  .sum h3 { margin: 0 0 8px; font: 600 11px var(--mono); color: var(--muted); letter-spacing: 1.2px; text-transform: uppercase; }
+  .sum p, .sum li { font-size: 13.5px; line-height: 1.55; margin: 0; }
+  .sum ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+  .sum li { padding-left: 14px; position: relative; }
+  .sum li::before { content: ""; position: absolute; left: 0; top: 9px; width: 6px; height: 1.5px; background: var(--muted); }
+
+  .hist { display: grid; }
+  .hist div { display: grid; grid-template-columns: 112px 1fr auto; gap: 14px; padding: 9px 16px; border-top: 1px solid var(--line); font-size: 13px; align-items: center; }
+  .hist div:first-child { border-top: 0; }
+  .hist time { font: 12px var(--mono); color: var(--dim); }
+  .hist span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist em { font: normal 12px var(--mono); color: var(--mask); }
+</style>
+</head>
+<body>
+<div class="screen">
+  <header class="top">
+    <div class="mark" aria-hidden="true"></div>
+    <h1>Redact Relay</h1>
+        <div class="spacer"></div>
+    <span class="last">last run</span>
+    <span class="pill local"><i></i>LOCAL</span>
+  </header>
+
+  <div class="body">
+    <!-- LEFT -->
+    <section class="col left">
+      <div class="label"><span class="n">01</span>Transcript <span class="r">4 lines · 269 chars</span></div>
+      <div class="editor">
+<div class="row"><span class="ln">1</span><span><span class="m">Alice Martin</span> (<span class="m">alice.martin@acme-corp.com</span>) opens the Acme review.</span></div>
+<div class="row"><span class="ln">2</span><span>Budget owner is <span class="m">+33 6 12 34 56 78</span>, card <span class="m">4111 1111 1111 1111</span>.</span></div>
+<div class="row"><span class="ln">3</span><span>The API key is <span class="m">key_live_9f2c8ab31d</span> and the room is <span class="m">12 rue de la Paix, Paris</span>.</span></div>
+<div class="row"><span class="ln">4</span><span>We decided to ship the beta on Friday; Sam will own the migration.</span></div>
+      </div>
+
+      <div class="controls">
+        <div class="slider"><span>Sensitivity</span><div class="track"><b></b><em></em></div></div>
+        <div class="val">0.60</div>
+        <div class="ticks"><span>0.0 keep more</span><span>1.0 redact more</span></div>
+        <div class="actions">
+          <button class="btn primary">Redact on device <kbd>⌘ ↵</kbd></button>
+          <button class="btn">Summarize in cloud</button>
+          <button class="btn ghost">Save</button>
+        </div>
+      </div>
+
+      <div class="hook">
+        <div class="stat red"><b>6</b><span>fragments blocked</span></div>
+        <div class="vr"></div>
+        <div class="stat"><b>412<small>ms</small></b><span>on-device latency</span></div>
+        <div class="vr"></div>
+        <div class="claim"><span class="pill local sm"><i></i>LOCAL · GEMINI NANO</span><p>Nothing left this device.</p></div>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="col">
+      <div class="card">
+        <div class="card-h"><div class="label"><span class="n">02</span>Redaction preview</div><span class="pill local sm"><i></i>LOCAL</span>
+          <div class="seg"><span>Highlighted</span><span class="on">Sanitized</span></div></div>
+<div class="sanit"><span class="tok">[REDACTED]</span> (<span class="tok">[REDACTED]</span>) opens the Acme review.
+Budget owner is <span class="tok">[REDACTED]</span>, card <span class="tok">[REDACTED]</span>.
+The API key is <span class="tok">[REDACTED]</span> and the room is <span class="tok">[REDACTED]</span>.
+We decided to ship the beta on Friday; Sam will own the migration.</div>
+        <div class="types"><span><b>1</b> name</span><span><b>1</b> email</span><span><b>1</b> phone</span><span><b>1</b> other</span><span><b>1</b> secret</span><span><b>1</b> address</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="label"><span class="n">03</span>Summary</div><span class="pill cloud sm"><i></i>CLOUD · 1.84 s</span><span class="label" style="margin-left:auto"><span class="r">from sanitized text only</span></span></div>
+        <div class="sum">
+          <section class="wide"><h3>Overview</h3><p>The Acme review covered budget ownership and access details, all masked before upload, and agreed on the beta release plan.</p></section>
+          <section><h3>Decisions</h3><ul><li>Ship the beta on Friday.</li></ul></section>
+          <section><h3>Actions</h3><ul><li>Sam owns the migration.</li></ul></section>
+          <section class="wide" style="border-top:1px solid var(--line)"><h3>Risks</h3><ul><li>A payment card and a live API key were spoken in the meeting; rotate the key before Friday.</li></ul></section>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="label"><span class="n">04</span>History</div><span class="label" style="margin-left:auto"><span class="r">sanitized text only</span></span></div>
+        <div class="hist">
+          <div><time>18 Nov · 10:42</time><span>[REDACTED] opens the Acme review…</span><em>6 blocked</em></div>
+          <div><time>17 Nov · 16:05</time><span>[REDACTED] joins the platform team…</span><em>4 blocked</em></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

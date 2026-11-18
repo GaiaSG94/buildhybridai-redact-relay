@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Redact Relay — V1 · 02 Boundary</title>
+<style>
+  :root {
+    --bg: #0e1015; --panel: #141821; --line: #222833; --grid: #1a1f29;
+    --text: #e7ecf3; --muted: #93a1b5; --dim: #5a6577;
+    --local: #3ddc84; --cloud: #ffb454; --mask: #ff5d5d;
+    --sans: "Helvetica Neue", Helvetica, "Inter", Arial, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #08090c; }
+  body { font: 14px/1.5 var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  .screen { width: 1440px; height: 900px; margin: 0 auto; background: var(--bg); position: relative; overflow: hidden;
+    display: grid; grid-template-columns: 620px 220px 1fr; grid-template-rows: 64px 56px 1fr 44px; }
+  /* visible grid */
+  .screen::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px); background-size: 120px 100%; opacity: .55; }
+  .screen > * { position: relative; }
+
+  .top { grid-column: 1 / -1; display: flex; align-items: center; padding: 0 32px; border-bottom: 1px solid var(--line); gap: 18px; }
+  .top h1 { margin: 0; font-size: 17px; font-weight: 500; letter-spacing: -.2px; }
+  .top h1 b { font-weight: 700; }
+  .top .sp { flex: 1; }
+  .top .cap { font: 11px var(--mono); color: var(--dim); letter-spacing: .5px; }
+  .pill { font: 600 12px/1 var(--mono); letter-spacing: 1px; padding: 7px 12px; border-radius: 999px; border: 1px solid; display: inline-flex; gap: 8px; align-items: center; }
+  .pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .pill.local { color: var(--local); border-color: var(--local); }
+  .pill.cloud { color: var(--cloud); border-color: var(--cloud); }
+  .pill.sm { font-size: 10.5px; padding: 4px 8px; gap: 6px; } .pill.sm i { width: 5px; height: 5px; }
+
+  /* zone headers */
+  .zone { display: flex; align-items: center; gap: 12px; padding: 0 32px; border-bottom: 1px solid var(--line); font: 11px var(--mono); letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+  .zone .n { color: var(--dim); }
+  .zone.device { color: var(--local); }
+  .zone.mid { justify-content: center; padding: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); color: var(--mask); }
+  .zone.cloudz { color: var(--cloud); }
+  .zone .r { margin-left: auto; color: var(--dim); letter-spacing: .4px; text-transform: none; }
+
+  /* device column */
+  .device-col { padding: 26px 32px; display: flex; flex-direction: column; gap: 22px; min-height: 0; }
+  .doc { font: 15px/30px var(--sans); color: #d4dbe5; margin: 0; }
+  .doc p { margin: 0 0 6px; display: grid; grid-template-columns: 28px 1fr; }
+  .doc p span.ln { font: 11px/30px var(--mono); color: var(--dim); }
+  .m { background: rgba(255,93,93,.13); border-bottom: 2px solid var(--mask); color: #ffc7c7; padding: 0 2px; }
+  .m sup { font: 600 9px var(--mono); color: var(--mask); margin-left: 3px; letter-spacing: .5px; vertical-align: 6px; }
+  .rule { height: 1px; background: var(--line); }
+  .sens { display: grid; grid-template-columns: 110px 1fr 60px; align-items: center; gap: 16px; }
+  .sens .k { font: 11px var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+  .scale { position: relative; height: 28px; }
+  .scale .ln { position: absolute; left: 0; right: 0; top: 14px; height: 1px; background: var(--line); }
+  .scale .tk { position: absolute; top: 9px; width: 1px; height: 11px; background: var(--dim); }
+  .scale .hd { position: absolute; top: 4px; left: 60%; width: 2px; height: 21px; background: var(--text); }
+  .scale .fill { position: absolute; left: 0; top: 13px; height: 3px; width: 60%; background: var(--text); }
+  .sens .v { font: 600 18px var(--mono); text-align: right; }
+  .steps { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 2px; }
+  .step { padding: 14px 16px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .step:first-child { border-left: 0; }
+  .step .n { font: 11px var(--mono); color: var(--dim); }
+  .step b { font-size: 15px; font-weight: 600; }
+  .step span { font-size: 12px; color: var(--muted); }
+  .step.on { background: var(--local); color: #05200e; } .step.on .n, .step.on span { color: #0d5a2c; }
+  .step.next b { color: var(--text); } .step.next { box-shadow: inset 0 -2px 0 var(--cloud); }
+  .step.idle { color: var(--muted); }
+
+  /* boundary column */
+  .boundary { border-left: 1px solid var(--line); border-right: 1px solid var(--line); padding: 26px 20px; display: flex; flex-direction: column; gap: 16px;
+    background: repeating-linear-gradient(-45deg, transparent 0 9px, rgba(255,93,93,.035) 9px 10px); }
+  .big { font: 600 96px/0.9 var(--mono); color: var(--mask); letter-spacing: -4px; }
+  .bl { font: 11px var(--mono); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .held { display: grid; gap: 6px; margin-top: 4px; }
+  .held div { display: flex; justify-content: space-between; font: 12px var(--mono); padding: 6px 0; border-top: 1px solid var(--line); }
+  .held div span { color: var(--muted); }
+  .held div b { color: var(--mask); font-weight: 500; }
+  .lat { margin-top: auto; border-top: 1px solid var(--line); padding-top: 14px; }
+  .lat b { font: 600 28px var(--mono); } .lat b small { font-size: 13px; color: var(--muted); font-weight: 400; }
+
+  /* cloud column */
+  .cloud-col { padding: 26px 32px; display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+  .sent { border: 1px solid var(--line); background: var(--panel); padding: 14px 16px; font: 13px/24px var(--mono); color: #b9c3d1; }
+  .sent .t { color: var(--mask); font-weight: 600; letter-spacing: .3px; }
+  .sk { font: 11px var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .sk .r { margin-left: auto; text-transform: none; letter-spacing: 0; color: var(--dim); }
+  .summary { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); }
+  .summary > div { padding: 14px 0 14px; border-bottom: 1px solid var(--line); }
+  .summary > div:nth-child(even) { padding-left: 20px; border-left: 1px solid var(--line); }
+  .summary .full { grid-column: 1 / -1; padding-right: 0; }
+  .summary h3 { margin: 0 0 6px; font: 11px var(--mono); color: var(--dim); letter-spacing: 1px; }
+  .summary h3 b { color: var(--muted); font-weight: 500; margin-left: 6px; }
+  .summary p { margin: 0; font-size: 14px; line-height: 1.5; }
+  .summary .full p { font-size: 18px; line-height: 1.45; letter-spacing: -.2px; }
+
+  .foot { grid-column: 1 / -1; border-top: 1px solid var(--line); display: flex; align-items: center; padding: 0 32px; gap: 28px; font: 11px var(--mono); color: var(--dim); }
+  .foot b { color: var(--muted); font-weight: 500; }
+  .foot .sp { flex: 1; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <header class="top">
+    <h1><b>Redact</b> Relay</h1>
+    
+    <span class="sp"></span>
+    <span class="cap">last run</span>
+    <span class="pill local"><i></i>LOCAL</span>
+  </header>
+
+  <div class="zone device"><span class="n">00</span>This device <span class="r">Gemini Nano · Prompt API</span></div>
+  <div class="zone mid">Boundary</div>
+  <div class="zone cloudz"><span class="n">02</span>Cloud <span class="r">receives sanitized text only</span></div>
+
+  <!-- DEVICE -->
+  <section class="device-col">
+    <div class="doc">
+      <p><span class="ln">01</span><span><span class="m">Alice Martin<sup>NAME</sup></span> (<span class="m">alice.martin@acme-corp.com<sup>EMAIL</sup></span>) opens the Acme review.</span></p>
+      <p><span class="ln">02</span><span>Budget owner is <span class="m">+33 6 12 34 56 78<sup>PHONE</sup></span>, card <span class="m">4111 1111 1111 1111<sup>OTHER</sup></span>.</span></p>
+      <p><span class="ln">03</span><span>The API key is <span class="m">key_live_9f2c8ab31d<sup>SECRET</sup></span> and the room is <span class="m">12 rue de la Paix, Paris<sup>ADDRESS</sup></span>.</span></p>
+      <p><span class="ln">04</span><span>We decided to ship the beta on Friday; Sam will own the migration.</span></p>
+    </div>
+    <div class="rule"></div>
+    <div class="sens">
+      <span class="k">Sensitivity</span>
+      <div class="scale"><div class="ln"></div><div class="fill"></div>
+        <div class="tk" style="left:0"></div><div class="tk" style="left:25%"></div><div class="tk" style="left:50%"></div><div class="tk" style="left:75%"></div><div class="tk" style="left:calc(100% - 1px)"></div><div class="hd"></div></div>
+      <span class="v">0.60</span>
+    </div>
+    <div class="steps">
+      <div class="step on"><span class="n">01 · done</span><b>Redact on device</b><span>6 fragments in 412 ms</span></div>
+      <div class="step next"><span class="n">02</span><b>Summarize in cloud</b><span>sanitized text only</span></div>
+      <div class="step idle"><span class="n">03</span><b>Save</b><span>to history</span></div>
+    </div>
+  </section>
+
+  <!-- BOUNDARY -->
+  <aside class="boundary">
+    <span class="bl">Held back</span>
+    <div class="big">06</div>
+    <span class="bl" style="color:var(--local)">Nothing left this device</span>
+    <div class="held">
+      <div><span>name</span><b>1</b></div>
+      <div><span>email</span><b>1</b></div>
+      <div><span>phone</span><b>1</b></div>
+      <div><span>secret</span><b>1</b></div>
+      <div><span>address</span><b>1</b></div>
+      <div><span>other</span><b>1</b></div>
+    </div>
+    <div class="lat"><span class="bl">Latency</span><br><b>412<small> ms</small></b></div>
+  </aside>
+
+  <!-- CLOUD -->
+  <section class="cloud-col">
+    <div>
+      <div class="sk">Payload sent <span class="r">218 chars · 6 tokens masked</span></div>
+      <div class="sent"><span class="t">[REDACTED]</span> (<span class="t">[REDACTED]</span>) opens the Acme review. Budget owner is <span class="t">[REDACTED]</span>, card <span class="t">[REDACTED]</span>. The API key is <span class="t">[REDACTED]</span> and the room is <span class="t">[REDACTED]</span>. We decided to ship the beta on Friday; Sam will own the migration.</div>
+    </div>
+    <div>
+      <div class="sk">Summary <span class="pill cloud sm"><i></i>CLOUD · 1.84 s</span></div>
+      <div class="summary">
+        <div class="full"><h3>01<b>OVERVIEW</b></h3><p>The Acme review covered budget ownership and access details, all masked before upload, and agreed on the beta release plan.</p></div>
+        <div><h3>02<b>DECISIONS</b></h3><p>Ship the beta on Friday.</p></div>
+        <div><h3>03<b>ACTIONS</b></h3><p>Sam owns the migration.</p></div>
+        <div class="full"><h3>04<b>RISKS</b></h3><p style="font-size:14px">A payment card and a live API key were spoken in the meeting; rotate the key before Friday.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span><b>History</b></span>
+    <span>18 Nov 10:42 · [REDACTED] opens the Acme review… · 6 blocked</span>
+    <span>17 Nov 16:05 · [REDACTED] joins the platform team… · 4 blocked</span>
+    <span class="sp"></span>
+    <span>stored: sanitized text only</span>
+  </footer>
+</div>
+</body>
+</html>

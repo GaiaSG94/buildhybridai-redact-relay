@@ -23,4 +23,6 @@ Maj: 2026-11-17 00:12
 
 ## Claude
 
-- (design non démarré — brief UI prêt dans `SPEC.md` §7)
+- 2026-11-18 : **design verrouillé (/lock)**. Direction **Wall** validée par Gaia après 5 tours d'exploration (V1-V5, journal complet dans `G-DESIGN/DESIGN.md`).
+- Référence d'implémentation : `G-DESIGN/STYLE.md` + 4 planches validées `G-DESIGN/planches/v5/page-01-app.html`, `page-02-non-configure.html`, `page-03-historique.html`, `page-04-mode-avion.html` (scènes Three.js r158 embarquées, desktop 1440×900 uniquement).
+- Ouvert pour l'implémentation : stocker le nombre de fragments par entrée Firestore (affiché dans l'historique) ; le cas « cloud fallback » suit les règles de l'état App.
