@@ -93,3 +93,15 @@ tests/              vitest unit tests (no network)
 ## Built with
 
 TypeScript, Vite, vitest, Firebase (AI Logic, App Check, Firestore).
+
+## Measurements
+
+The line under the toolbar is computed from the runs that actually happened
+(`src/core/metrics.ts`): how many inferences ran, how many of them ran on the
+device, the median device latency, the median cloud latency, and the share of
+runs that stayed on the device. These are the numbers quoted in the demo and in
+the submission — nothing is hard-coded, nothing is estimated.
+
+```text
+Measurements: 5 run(s) - 3 local - 2 cloud - median local 184 ms - median cloud 1.29 s - 60% of runs computed on device
+```

@@ -11,6 +11,7 @@ export interface AppElements {
   saveButton: HTMLButtonElement;
   badge: HTMLElement;
   stats: HTMLElement;
+  metrics: HTMLElement;
   notice: HTMLElement;
   preview: HTMLElement;
   summaryPanel: HTMLElement;
@@ -26,6 +27,7 @@ export function queryAppElements(root: HTMLElement): AppElements {
     saveButton: requireInput(root, '#save'),
     badge: requireInput(root, '#badge'),
     stats: requireInput(root, '#stats'),
+    metrics: requireInput(root, '#metrics'),
     notice: requireInput(root, '#notice'),
     preview: requireInput(root, '#preview'),
     summaryPanel: requireInput(root, '#summary-panel'),
@@ -79,6 +81,10 @@ export function showHistory(elements: AppElements, entries: string[]): void {
     list.appendChild(item);
   }
   elements.history.replaceChildren(list);
+}
+
+export function showMetrics(elements: AppElements, text: string): void {
+  elements.metrics.textContent = text;
 }
 
 export function setNotice(elements: AppElements, message: string | null): void {

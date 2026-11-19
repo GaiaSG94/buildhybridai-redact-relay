@@ -3,11 +3,13 @@ import { loadConfig } from './config';
 import { initFirebase } from './firebase';
 import { createModels, runRedaction, runSummary, type RedactorBundle } from './models';
 import { saveSummary, listSummaries } from './store/firestore';
+import { formatMetrics, summarize, type TimedRun } from './core/metrics';
 import {
   queryAppElements,
   redactionOptions,
   setNotice,
   showHistory,
+  showMetrics,
   showRun,
   showSanitized,
   showSummary,
@@ -20,6 +22,8 @@ const SAMPLE = [
   'The API key is key_live_9f2c8ab31d and the room is 12 rue de la Paix, Paris.',
   'We decided to ship the beta on Friday; Sam will own the migration.',
 ].join('\n');
+
+const runs: TimedRun[] = [];
 
 export function mount(root: HTMLElement): void {
   const elements = queryAppElements(root);
@@ -55,6 +59,8 @@ const bindRedact = (elements: AppElements, models: RedactorBundle): void => {
         const run = await runRedaction(models, text, redactionOptions(elements));
         showRun(elements, run, text);
         showSanitized(elements, run);
+        runs.push({ source: run.source, latencyMs: run.latencyMs });
+        showMetrics(elements, formatMetrics(summarize(runs)));
       } catch (error) {
         setNotice(elements, `Redaction failed: ${describe(error)}`);
       } finally {
@@ -74,7 +80,11 @@ const bindSummarize = (elements: AppElements, models: RedactorBundle): void => {
       }
       elements.summarizeButton.disabled = true;
       try {
-        showSummary(elements, await runSummary(models, sanitized));
+        const started = performance.now();
+        const summary = await runSummary(models, sanitized);
+        runs.push({ source: 'in_cloud', latencyMs: Math.round(performance.now() - started) });
+        showMetrics(elements, formatMetrics(summarize(runs)));
+        showSummary(elements, summary);
       } catch (error) {
         setNotice(elements, `Summary failed: ${describe(error)}`);
       } finally {
