@@ -16,9 +16,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "firebase": "^13.4.0"
+    "firebase": "^13.4.0",
+    "three": "^0.158.0"
   },
   "devDependencies": {
+    "@types/three": "^0.158.3",
+    "puppeteer-core": "^25.18.1",
     "typescript": "^5.9.3",
     "vite": "^6.4.6",
     "vitest": "^3.2.7"

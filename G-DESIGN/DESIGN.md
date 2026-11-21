@@ -158,3 +158,50 @@ Les décisions par défaut de V5.1 tiennent toujours (historique en tiroir ; nom
 **Reste ouvert pour l'implémentation** (cf. `PAGES.md` § Questions) :
 - stocker le nombre de fragments dans Firestore, puisque l'historique l'affiche ;
 - le cas « cloud fallback » n'a pas de planche ; il reprend les règles de l'état App, avec le statut CLOUD sur la rédaction.
+
+## opencode - Revue d'implementation (07b, 2026-11-21)
+
+Style **Wall** verrouille (V6) implemente dans le produit (TS + Vite, three@0.158 npm,
+`RoomEnvironment`/`RoundedBoxGeometry` addons officiels). Les 4 pages de `PAGES.md`
+= 1 ecran produit a 4 modes (`app` / `unconfigured` / `history` / `offline`),
+comme le gabarit unique des planches.
+
+| Page | Planche | Produit | Compare planche | produit |
+|---|---|---|---|---|
+| App | `planches/v5/page-01-app.html` | `?capture=app` | `revue/planche-01-app.png` | `revue/produit-app.png` |
+| Non configure | `page-02-non-configure.html` | `?capture=unconfigured` | `revue/planche-02-non-configure.png` | `revue/produit-unconfigured.png` |
+| Historique (tiroir) | `page-03-historique.html` | `?capture=history` | `revue/planche-03-historique.png` | `revue/produit-history.png` |
+| Mode avion | `page-04-mode-avion.html` | `?capture=offline` | `revue/planche-04-mode-avion.png` | `revue/produit-offline.png` |
+
+Montages planche | produit : `revue/compare-01-app.png` … `compare-04-mode-avion.png`
+(2880x900). Outil : `tools/capture.mjs` (puppeteer-core + Chrome local ; harnais
+de charge `?capture=` dans `src/capture.ts`, donnees construites par le vrai
+pipeline `parseSpans`/`sanitize`).
+
+**Fonctionnel porte par le design** (decisions V5.2/V6 appliquees) :
+- Firestore stocke `held` (nombre de fragments) + les 4 sections du resume
+  (derivees du texte assaini uniquement) parce que le tiroir verrouille les affiche.
+- Mouvements selon `STYLE.md` : construction des blocs (40 ms d'ecart, chute
+  0,6 + rebond), recul des blocs retenus 380 ms `cubic-bezier(.22,1,.36,1)` puis
+  allumage 240 ms, compteur incremente a chaque bloc.
+- `offline` reel : `navigator.onLine` + evenements online/offline ; Summarize et
+  Save desactivees avec etiquette OFFLINE, historique « needs the cloud ».
+- Bascule `view: held / original` de la plaque sombre : le mur repasse les vraies
+  valeurs (conforme planche 02) ; latences reelles a la place des valeurs de demo.
+
+**Ecarts volontaires (contraintes reelles, soumis a Gaia)** :
+1. **Editeur de transcript** : les planches n'ont pas de zone de saisie (exemple
+   fige). Le produit en a besoin : plaque HUD « Edit transcript » (meme langage :
+   plaque papier + mono) ouverte par « edit » dans la plaque sombre du bas.
+2. **Plaque d'erreur** : les planches ne couvrent pas les echecs (reseau, modele) ;
+   petite plaque a filet rouge, meme gabarit.
+3. **Slider natif** : `input[type=range]` style pour reproduire le filet encre +
+   repere rouge (planches en div statiques).
+4. **Metriques medianes** (ligne ajoutee apres le design) : en infobulle du statut,
+   aucun nouvel element visuel.
+5. **Exposition** : `scene.environmentIntensity` indisponible dans three r158 npm
+   (presente dans le build embarque des planches) ; centre du mur ~plus lumineux
+   de 5-10 % (134 vs 118 sur un bloc rouge). Invisible en pratique.
+
+Gates : 39/39 tests vitest (13 nouveaux : mots du mur, mise en page, formats HUD),
+`tsc --noEmit` propre, build OK, `check-limits` 0 probleme (hors `dist/` non versionne).

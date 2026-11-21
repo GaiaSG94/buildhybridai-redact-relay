@@ -10,40 +10,92 @@
     />
   </head>
   <body>
-    <div id="app">
-      <header class="topbar">
-        <h1>Redact Relay</h1>
-        <span id="badge" class="badge" data-source="on_device">LOCAL</span>
-      </header>
+    <div class="screen" data-mode="app" id="screen">
+      <canvas id="wall-canvas"></canvas>
+      <textarea id="transcript" hidden></textarea>
 
-      <p id="notice" class="notice" hidden></p>
+      <div class="chip brand">Redact Relay</div>
+      <nav class="chip nav" data-show="app unconfigured offline">
+        <span class="on" id="tab-transcript-main">Transcript</span><span id="tab-history-main">History</span>
+      </nav>
+      <nav class="chip nav" data-show="history">
+        <span id="tab-transcript-side">Transcript</span><span class="on">History</span>
+      </nav>
+      <div class="chip local" id="status-online" data-show="app history offline">
+        <i></i><span id="status-online-text">Local · Gemini Nano</span>
+      </div>
+      <div class="chip local warn" data-show="unconfigured">
+        <i></i>Not configured · Firebase keys missing
+      </div>
 
-      <main class="grid">
-        <section class="pane">
-          <h2>Transcript</h2>
-          <textarea id="transcript" rows="12" spellcheck="false"></textarea>
-          <label class="slider">
-            Sensitivity
-            <input id="sensitivity" type="range" min="0" max="1" step="0.05" value="0.6" />
-          </label>
-          <div class="actions">
-            <button id="redact" type="button" class="primary">Redact on device</button>
-            <button id="summarize" type="button">Summarize in cloud</button>
-            <button id="save" type="button">Save</button>
-          </div>
-          <p id="stats" class="stats">Paste a transcript and run the on-device redaction.</p>
-          <p id="metrics" class="stats"></p>
-        </section>
+      <section class="chip panel" data-show="app history">
+        <h3><span>Relayed to the cloud</span><span class="cl"><i></i><span id="cloud-latency">CLOUD</span></span></h3>
+        <div id="summary-rows"></div>
+      </section>
+      <section class="chip panel" data-show="unconfigured">
+        <h3><span>Setup required</span><span class="cl warn"><i></i>Actions disabled</span></h3>
+        <p class="lead">Firebase is not configured: copy <code>.env.example</code> to <code>.env.local</code>.</p>
+        <div class="row"><span>Missing</span><p class="keys">VITE_FIREBASE_API_KEY<br />VITE_FIREBASE_AUTH_DOMAIN<br />VITE_FIREBASE_PROJECT_ID<br />VITE_FIREBASE_APP_ID</p></div>
+        <div class="row"><span>Meanwhile</span><p>The sample transcript is loaded. Nothing is held, summarized or saved.</p></div>
+      </section>
+      <section class="chip panel muted" data-show="offline">
+        <h3><span>Relayed to the cloud</span><span class="cl off"><i></i>CLOUD · offline</span></h3>
+        <p class="lead">You are offline. The redaction still ran on this device; the summary needs the cloud.</p>
+        <div class="row ghost"><span>Overview</span><p>—</p></div>
+        <div class="row ghost"><span>Decisions</span><p>—</p></div>
+        <div class="row ghost"><span>Actions</span><p>—</p></div>
+        <div class="row ghost"><span>Risks</span><p>—</p></div>
+      </section>
 
-        <section class="pane">
-          <h2>Redaction preview</h2>
-          <div id="preview" class="preview"></div>
-          <h2>Summary</h2>
-          <div id="summary-panel" class="summary"></div>
-          <h2>History</h2>
-          <div id="history" class="history"></div>
-        </section>
-      </main>
+      <section class="chip hist" data-show="app">
+        <div><b>History</b><span>sanitized text only</span></div>
+        <div id="hist-rows"></div>
+      </section>
+      <section class="chip hist muted" data-show="offline">
+        <div><b>History</b><span>needs the cloud</span></div>
+      </section>
+
+      <div class="veil" data-show="history"></div>
+      <aside class="chip drawer" data-show="history">
+        <h3><span>History · saved summaries</span><span>sanitized text only</span><button class="x" id="drawer-close" type="button">Close</button></h3>
+        <div id="drawer-entries"></div>
+      </aside>
+
+      <div class="chip count" data-show="app history offline">
+        <span class="n" id="count-value">00</span>
+        <span class="l" id="count-chip">fragments held on this device<br />nothing left this device</span>
+      </div>
+      <div class="chip count zero" data-show="unconfigured">
+        <span class="n">00</span>
+        <span class="l">nothing held yet<br />sample transcript loaded</span>
+      </div>
+
+      <div class="chip cap dark" id="cap" data-show="app unconfigured offline">
+        <span id="cap-text">Transcript</span><u id="cap-edit">edit</u>
+      </div>
+
+      <div class="chip ctl">
+        <label class="sl" for="sensitivity">
+          <span>Sensitivity</span>
+          <input id="sensitivity" type="range" min="0" max="1" step="0.05" value="0.6" />
+          <span id="sensitivity-value">0.60</span>
+        </label>
+        <div class="btns">
+          <button class="btn p" data-dis="unconfigured" id="redact" type="button">Redact on device</button>
+          <button class="btn" data-dis="unconfigured offline" id="summarize" type="button">Summarize in cloud<em data-show="offline">offline</em></button>
+          <button class="btn l" data-dis="unconfigured offline" id="save" type="button">Save</button>
+        </div>
+      </div>
+
+      <section class="chip panel editor" id="editor" hidden>
+        <h3><span>Edit transcript</span></h3>
+        <textarea id="editor-area" spellcheck="false"></textarea>
+        <div class="btns">
+          <button class="btn p" id="editor-apply" type="button">Apply</button>
+          <button class="btn" id="editor-cancel" type="button">Cancel</button>
+        </div>
+      </section>
+      <p class="chip err" id="notice" hidden></p>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
